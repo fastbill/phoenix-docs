@@ -1,0 +1,11 @@
+{
+  "title": "My Module",
+  "description": "Documentation for My Module",
+  "group_order": [
+    "Getting Started",
+    "Guide",
+    "Reference",
+    "API",
+    "Advanced"
+  ]
+}
