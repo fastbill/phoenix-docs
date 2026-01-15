@@ -103,13 +103,15 @@ docs/
 
 The container automatically reorganizes them into Starlight's directory structure and generates the sidebar configuration.
 
-### Auto-Draft Feature
+### Auto-Grouping
 
-Files without frontmatter are automatically:
-- Assigned a title based on filename (`my-page.md` → "My Page")
-- Placed in the "Drafts" sidebar group
+Files without `sidebar_group` frontmatter are automatically grouped:
 
-This makes it easy to quickly add notes or AI-generated content that can be properly categorized later.
+- **Files in subdirectories** → use directory name as group (`api/users.md` → "Api" group)
+- **Files at root level** → placed in "Drafts" group
+- **Title** → generated from filename if missing
+
+This supports both flat and nested directory structures without requiring frontmatter.
 
 ### Plans Directory
 

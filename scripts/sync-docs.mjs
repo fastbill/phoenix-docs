@@ -70,6 +70,14 @@ function filenameToTitle(filename) {
     .replace(/\b\w/g, char => char.toUpperCase());
 }
 
+function directoryToGroupName(dirName) {
+  // Convert directory name to title case group name
+  // "api" → "API", "getting-started" → "Getting Started"
+  return dirName
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
 function extractDateFromFilename(filename) {
   // Match common date patterns: 2024-01-15, 20240115, 2024_01_15
   const patterns = [
@@ -231,7 +239,13 @@ function processMarkdownFile(srcPath, destDir, excludes, relativePath = '') {
     }
 
     if (!frontmatter.sidebar_group && !isIndex) {
-      frontmatter.sidebar_group = DRAFTS_GROUP;
+      // Use top-level directory as group, or Drafts if at root
+      if (relativePath) {
+        const topLevelDir = relativePath.split('/')[0];
+        frontmatter.sidebar_group = directoryToGroupName(topLevelDir);
+      } else {
+        frontmatter.sidebar_group = DRAFTS_GROUP;
+      }
     }
   }
 
@@ -406,7 +420,13 @@ async function watchAndSync() {
         } else if (frontmatter.sidebar_group) {
           knownGroups.add(frontmatter.sidebar_group);
         } else if (!isIndex) {
-          knownGroups.add(DRAFTS_GROUP);
+          // Use top-level directory as group, or Drafts if at root
+          if (relPath) {
+            const topLevelDir = relPath.split('/')[0];
+            knownGroups.add(directoryToGroupName(topLevelDir));
+          } else {
+            knownGroups.add(DRAFTS_GROUP);
+          }
         }
       }
     }
