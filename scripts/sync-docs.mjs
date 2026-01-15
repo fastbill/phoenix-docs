@@ -61,6 +61,15 @@ function slugify(text) {
     .replace(/^-|-$/g, '');
 }
 
+function filenameToTitle(filename) {
+  // Remove extension and convert to title case
+  // "my-awesome-page.md" → "My Awesome Page"
+  return filename
+    .replace(/\.(md|mdx)$/, '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
 function parseFrontmatter(content) {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return { frontmatter: {}, body: content, raw: '' };
@@ -145,10 +154,24 @@ function ensureDir(dir) {
   }
 }
 
+const DRAFTS_GROUP = 'Drafts';
+
 function processMarkdownFile(srcPath, destDir, excludes) {
   const filename = basename(srcPath);
   const content = readFileSync(srcPath, 'utf-8');
   const { frontmatter, body } = parseFrontmatter(content);
+
+  // If no title, generate from filename
+  if (!frontmatter.title) {
+    frontmatter.title = filenameToTitle(filename);
+  }
+
+  // index.md stays at root level, others without sidebar_group go to Drafts
+  const isIndex = filename === 'index.md' || filename === 'index.mdx';
+
+  if (!frontmatter.sidebar_group && !isIndex) {
+    frontmatter.sidebar_group = DRAFTS_GROUP;
+  }
 
   // Determine destination directory based on sidebar_group
   let targetDir = destDir;
@@ -312,8 +335,11 @@ async function watchAndSync() {
       } else if (entry.endsWith('.md') || entry.endsWith('.mdx')) {
         const content = readFileSync(path, 'utf-8');
         const { frontmatter } = parseFrontmatter(content);
+        const isIndex = entry === 'index.md' || entry === 'index.mdx';
         if (frontmatter.sidebar_group) {
           knownGroups.add(frontmatter.sidebar_group);
+        } else if (!isIndex) {
+          knownGroups.add(DRAFTS_GROUP);
         }
       }
     }

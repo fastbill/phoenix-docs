@@ -98,10 +98,19 @@ docs/
 ├── installation.md      # sidebar_group: "Getting Started"
 ├── configuration.md     # sidebar_group: "Getting Started"
 ├── basics.md            # sidebar_group: "Guide"
+├── quick-notes.md       # no frontmatter → goes to "Drafts"
 └── index.md
 ```
 
-The container automatically reorganizes them into Starlight's directory structure and generates the sidebar configuration. Files without `sidebar_group` stay at the root level.
+The container automatically reorganizes them into Starlight's directory structure and generates the sidebar configuration.
+
+### Auto-Draft Feature
+
+Files without frontmatter are automatically:
+- Assigned a title based on filename (`my-page.md` → "My Page")
+- Placed in the "Drafts" sidebar group
+
+This makes it easy to quickly add notes or AI-generated content that can be properly categorized later.
 
 ## CI/CD
 
