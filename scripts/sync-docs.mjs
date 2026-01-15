@@ -26,7 +26,7 @@ const configPath = join(sourceDir, 'docs.json');
 const sidebarConfigOutput = join(__dirname, '../src/sidebar.generated.mjs');
 
 // Default exclude patterns
-const DEFAULT_EXCLUDES = ['plans', '_*'];
+const DEFAULT_EXCLUDES = ['_*'];
 
 // Parse command line args
 const watchMode = process.argv.includes('--watch');

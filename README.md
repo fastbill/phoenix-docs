@@ -46,7 +46,6 @@ Edit `docs/docs.json`:
     "Reference"
   ],
   "exclude": [
-    "plans",
     "_*"
   ]
 }
@@ -59,7 +58,7 @@ Edit `docs/docs.json`:
 | `title` | Documentation site title |
 | `description` | Site description |
 | `group_order` | Sidebar group ordering (unlisted groups appear alphabetically at the end) |
-| `exclude` | Patterns to exclude from docs (default: `["plans", "_*"]`) |
+| `exclude` | Patterns to exclude from docs (default: `["_*"]`) |
 
 ### Exclude Patterns
 

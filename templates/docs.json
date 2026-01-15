@@ -9,7 +9,6 @@
     "Advanced"
   ],
   "exclude": [
-    "plans",
     "_*"
   ]
 }
