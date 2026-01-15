@@ -20,13 +20,8 @@ fi
 
 echo "Building documentation..."
 
-# Create symlink from src/content/docs to project docs
-rm -rf /app/src/content/docs
-ln -s "$DOCS_DIR" /app/src/content/docs
-
-# Generate sidebar
-echo "Generating sidebar..."
-node /app/scripts/generate-sidebar.mjs
+# Sync docs with exclusions and generate sidebar
+node /app/scripts/sync-docs.mjs
 
 # Clean output directory
 rm -rf "$OUTPUT_DIR"

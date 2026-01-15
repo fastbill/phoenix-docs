@@ -44,9 +44,28 @@ Edit `docs/docs.json`:
     "Getting Started",
     "Guide",
     "Reference"
+  ],
+  "exclude": [
+    "plans",
+    "_*"
   ]
 }
 ```
+
+### Configuration Options
+
+| Option | Description |
+|--------|-------------|
+| `title` | Documentation site title |
+| `description` | Site description |
+| `group_order` | Sidebar group ordering (unlisted groups appear alphabetically at the end) |
+| `exclude` | Patterns to exclude from docs (default: `["plans", "_*"]`) |
+
+### Exclude Patterns
+
+- `plans` - Exact directory/file name match
+- `_*` - Wildcard prefix (matches `_draft.md`, `_notes/`, etc.)
+- `*.draft.md` - Wildcard suffix
 
 ## Writing Documentation
 
@@ -57,16 +76,32 @@ Each markdown file needs frontmatter:
 title: Page Title
 sidebar_group: Getting Started
 sidebar_position: 1
-description: Brief description for table of contents
+description: Brief description
 ---
 ```
 
-- `title` - Page title (required)
-- `sidebar_group` - Navigation group (required for inclusion in sidebar)
-- `sidebar_position` - Sort order within group
-- `description` - Optional, shown in TOC
+### Frontmatter Options
 
-Files starting with `_` are excluded from navigation.
+| Option | Description |
+|--------|-------------|
+| `title` | Page title (required) |
+| `sidebar_group` | Navigation group - files are organized into subdirectories based on this |
+| `sidebar_position` | Sort order within group (lower = higher) |
+| `description` | Optional page description |
+
+### How It Works
+
+You write flat files with `sidebar_group` frontmatter:
+
+```
+docs/
+├── installation.md      # sidebar_group: "Getting Started"
+├── configuration.md     # sidebar_group: "Getting Started"
+├── basics.md            # sidebar_group: "Guide"
+└── index.md
+```
+
+The container automatically reorganizes them into Starlight's directory structure and generates the sidebar configuration. Files without `sidebar_group` stay at the root level.
 
 ## CI/CD
 

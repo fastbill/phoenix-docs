@@ -32,10 +32,7 @@ export default defineConfig({
     starlight({
       title: projectConfig.title,
       description: projectConfig.description,
-      sidebar: [
-        { label: 'Introduction', slug: 'index' },
-        ...sidebar,
-      ],
+      sidebar,
     }),
   ],
 });
