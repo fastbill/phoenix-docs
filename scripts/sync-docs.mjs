@@ -257,6 +257,17 @@ function processMarkdownFile(srcPath, destDir, excludes, relativePath = '') {
     group = frontmatter.sidebar_group;
     const groupSlug = slugify(group);
     targetDir = join(destDir, groupSlug);
+
+    // Preserve nested directory structure within the group
+    // e.g., "finapi/finapi-access/get" → strip "finapi", keep "finapi-access/get"
+    if (relativePath) {
+      const pathParts = relativePath.split('/');
+      if (pathParts.length > 1) {
+        // Skip the top-level dir (used as group), keep the rest
+        const nestedPath = pathParts.slice(1).join('/');
+        targetDir = join(targetDir, nestedPath);
+      }
+    }
   }
 
   // Transform frontmatter
