@@ -70,6 +70,45 @@ function filenameToTitle(filename) {
     .replace(/\b\w/g, char => char.toUpperCase());
 }
 
+function extractDateFromFilename(filename) {
+  // Match common date patterns: 2024-01-15, 20240115, 2024_01_15
+  const patterns = [
+    /^(\d{4}-\d{2}-\d{2})[-_]?/,      // 2024-01-15-name.md
+    /^(\d{4}_\d{2}_\d{2})[-_]?/,      // 2024_01_15_name.md
+    /^(\d{8})[-_]?/,                   // 20240115-name.md
+  ];
+
+  const basename = filename.replace(/\.(md|mdx)$/, '');
+
+  for (const pattern of patterns) {
+    const match = basename.match(pattern);
+    if (match) {
+      // Normalize to YYYYMMDD for sorting
+      const dateStr = match[1].replace(/[-_]/g, '');
+      const remaining = basename.slice(match[0].length);
+      return { dateStr, remaining };
+    }
+  }
+
+  return { dateStr: null, remaining: basename };
+}
+
+function planFilenameToTitle(filename) {
+  // Extract date and create clean title
+  // "2024-01-15-my-plan.md" → "My Plan"
+  // "2024-01-15_feature_design.md" → "Feature Design"
+  const { remaining } = extractDateFromFilename(filename);
+
+  if (remaining) {
+    return remaining
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b\w/g, char => char.toUpperCase())
+      .trim();
+  }
+
+  return filenameToTitle(filename);
+}
+
 function parseFrontmatter(content) {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return { frontmatter: {}, body: content, raw: '' };
@@ -155,22 +194,45 @@ function ensureDir(dir) {
 }
 
 const DRAFTS_GROUP = 'Drafts';
+const PLANS_GROUP = 'Plans';
 
-function processMarkdownFile(srcPath, destDir, excludes) {
+function processMarkdownFile(srcPath, destDir, excludes, relativePath = '') {
   const filename = basename(srcPath);
   const content = readFileSync(srcPath, 'utf-8');
   const { frontmatter, body } = parseFrontmatter(content);
 
-  // If no title, generate from filename
-  if (!frontmatter.title) {
-    frontmatter.title = filenameToTitle(filename);
-  }
-
-  // index.md stays at root level, others without sidebar_group go to Drafts
+  // Check if file is from plans directory
+  const isFromPlans = relativePath.startsWith('plans/') || relativePath === 'plans';
   const isIndex = filename === 'index.md' || filename === 'index.mdx';
 
-  if (!frontmatter.sidebar_group && !isIndex) {
-    frontmatter.sidebar_group = DRAFTS_GROUP;
+  // Handle plans directory specially
+  if (isFromPlans) {
+    // Generate title from filename (without date prefix)
+    if (!frontmatter.title) {
+      frontmatter.title = planFilenameToTitle(filename);
+    }
+
+    // Always use Plans group
+    frontmatter.sidebar_group = PLANS_GROUP;
+
+    // Extract date for sorting (newer dates = lower order = appear first)
+    if (!frontmatter.sidebar_position) {
+      const { dateStr } = extractDateFromFilename(filename);
+      if (dateStr) {
+        // Invert date so newer appears first (99999999 - 20240115 = 79859884)
+        const order = 99999999 - parseInt(dateStr, 10);
+        frontmatter.sidebar_position = order;
+      }
+    }
+  } else {
+    // Regular file handling
+    if (!frontmatter.title) {
+      frontmatter.title = filenameToTitle(filename);
+    }
+
+    if (!frontmatter.sidebar_group && !isIndex) {
+      frontmatter.sidebar_group = DRAFTS_GROUP;
+    }
   }
 
   // Determine destination directory based on sidebar_group
@@ -222,7 +284,7 @@ function syncDirectory(src, dest, excludes, groups = new Set(), relativePath = '
       syncDirectory(srcPath, dest, excludes, groups, relativePath ? `${relativePath}/${entry}` : entry);
     } else if (entry.endsWith('.md') || entry.endsWith('.mdx')) {
       // Process markdown files
-      const result = processMarkdownFile(srcPath, dest, excludes);
+      const result = processMarkdownFile(srcPath, dest, excludes, relativePath);
       if (result.group) {
         groups.add(result.group);
       }
@@ -324,19 +386,24 @@ async function watchAndSync() {
   let knownGroups = new Set();
 
   // Collect initial groups
-  const collectGroups = (dir) => {
+  const collectGroups = (dir, relPath = '') => {
     if (!existsSync(dir)) return;
     const entries = readdirSync(dir);
     for (const entry of entries) {
       const path = join(dir, entry);
       const stat = statSync(path);
+      const entryRelPath = relPath ? `${relPath}/${entry}` : entry;
       if (stat.isDirectory()) {
-        collectGroups(path);
+        collectGroups(path, entryRelPath);
       } else if (entry.endsWith('.md') || entry.endsWith('.mdx')) {
         const content = readFileSync(path, 'utf-8');
         const { frontmatter } = parseFrontmatter(content);
         const isIndex = entry === 'index.md' || entry === 'index.mdx';
-        if (frontmatter.sidebar_group) {
+        const isFromPlans = relPath.startsWith('plans') || relPath === 'plans';
+
+        if (isFromPlans) {
+          knownGroups.add(PLANS_GROUP);
+        } else if (frontmatter.sidebar_group) {
           knownGroups.add(frontmatter.sidebar_group);
         } else if (!isIndex) {
           knownGroups.add(DRAFTS_GROUP);
@@ -348,10 +415,11 @@ async function watchAndSync() {
 
   const handleFileChange = (srcPath) => {
     const ext = extname(srcPath);
-    const filename = basename(srcPath);
+    const rel = relative(sourceDir, srcPath);
+    const relDir = dirname(rel);
 
     if (ext === '.md' || ext === '.mdx') {
-      const result = processMarkdownFile(srcPath, destDir, config.exclude);
+      const result = processMarkdownFile(srcPath, destDir, config.exclude, relDir === '.' ? '' : relDir);
       if (result.group && !knownGroups.has(result.group)) {
         knownGroups.add(result.group);
         // Regenerate sidebar config when new group appears
@@ -361,7 +429,6 @@ async function watchAndSync() {
       }
     } else if (ext !== '.json') {
       // Copy non-markdown files
-      const rel = relative(sourceDir, srcPath);
       const destPath = join(destDir, rel);
       copyFile(srcPath, destPath);
     }

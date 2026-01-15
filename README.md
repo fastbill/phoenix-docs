@@ -111,6 +111,23 @@ Files without frontmatter are automatically:
 
 This makes it easy to quickly add notes or AI-generated content that can be properly categorized later.
 
+### Plans Directory
+
+Files in a `plans/` directory get special treatment:
+- Placed in "Plans" sidebar group
+- Title generated from filename without date prefix
+- Sorted by date (newest first)
+
+Example:
+```
+docs/plans/
+├── 2024-01-15-api-redesign.md    → "Api Redesign" (appears first)
+├── 2024-01-10-auth-flow.md       → "Auth Flow"
+└── 2024-01-05-initial-plan.md    → "Initial Plan" (appears last)
+```
+
+Perfect for viewing AI-generated plans in Starlight without any manual frontmatter editing.
+
 ## CI/CD
 
 ### GitHub Actions
